@@ -1,12 +1,18 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>MarmitaTech - Login</title>
-    <style>body { font-family: sans-serif; display: flex; justify-content: center; margin-top: 100px; background: #f4f4f4; }</style>
+    <title>Restaurante Planalto - Login</title>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; margin-top: 60px; background: #f4f4f4; }
+        .login-box { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); text-align: center; }
+        .login-box img { width: 120px; border-radius: 50%; margin-bottom: 10px; }
+        .login-box h2 { margin: 5px 0 20px; color: #333; }
+    </style>
 </head>
 <body>
-    <form action="/login" method="POST" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
-        <h2>🥪 MarmitaTech Login</h2>
+    <form action="/login" method="POST" class="login-box">
+        <img src="/images/logo.jpeg" alt="Restaurante Planalto">
+        <h2>Restaurante Planalto</h2>
         <input type="text" name="username" placeholder="Usuário" required><br><br>
         <input type="password" name="password" placeholder="Senha" required><br><br>
         <button type="submit">Entrar</button>

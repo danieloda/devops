@@ -1,15 +1,211 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-    <title>MarmitaTech - Login</title>
-    <style>body { font-family: sans-serif; display: flex; justify-content: center; margin-top: 100px; background: #f4f4f4; }</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurante Planalto - Login</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        }
+
+        .login-box {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px 35px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            width: 100%;
+            max-width: 380px;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .logo-container {
+            margin-bottom: 20px;
+        }
+
+        .logo-container img {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #e94560;
+            box-shadow: 0 4px 15px rgba(233, 69, 96, 0.3);
+            transition: transform 0.3s ease;
+        }
+
+        .logo-container img:hover {
+            transform: scale(1.05);
+        }
+
+        h2 {
+            color: #1a1a2e;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: 0.85rem;
+            margin-bottom: 25px;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 18px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 14px 16px 14px 45px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            background: #fafafa;
+        }
+
+        .input-group input:focus {
+            border-color: #e94560;
+            box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.1);
+            background: #fff;
+        }
+
+        .input-group .icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.1rem;
+            color: #aaa;
+            transition: color 0.3s ease;
+        }
+
+        .input-group input:focus + .icon,
+        .input-group input:not(:placeholder-shown) + .icon {
+            color: #e94560;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1rem;
+            color: #aaa;
+            padding: 0;
+        }
+
+        .toggle-password:hover {
+            color: #e94560;
+        }
+
+        button[type="submit"] {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #e94560, #c23152);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            margin-top: 8px;
+        }
+
+        button[type="submit"]:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(233, 69, 96, 0.4);
+        }
+
+        button[type="submit"]:active {
+            transform: translateY(0);
+        }
+
+        .error-message {
+            background: #fff2f2;
+            color: #d32f2f;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            margin-bottom: 15px;
+            display: none;
+            border: 1px solid #ffd6d6;
+        }
+
+        .footer {
+            margin-top: 20px;
+            color: #aaa;
+            font-size: 0.75rem;
+        }
+    </style>
 </head>
 <body>
-    <form action="/login" method="POST" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
-        <h2>🥪 MarmitaTech Login</h2>
-        <input type="text" name="username" placeholder="Usuário" required><br><br>
-        <input type="password" name="password" placeholder="Senha" required><br><br>
+    <form action="/login" method="POST" class="login-box" id="loginForm">
+        <div class="logo-container">
+            <img src="/images/logo.jpeg" alt="Restaurante Planalto">
+        </div>
+        <h2>Restaurante Planalto</h2>
+        <p class="subtitle">Faça login para acessar o painel</p>
+
+        <div class="error-message" id="errorMsg">Preencha todos os campos corretamente.</div>
+
+        <div class="input-group">
+            <input type="text" name="username" id="username" placeholder="Usuário" required>
+            <span class="icon">&#128100;</span>
+        </div>
+
+        <div class="input-group">
+            <input type="password" name="password" id="password" placeholder="Senha" required>
+            <span class="icon">&#128274;</span>
+            <button type="button" class="toggle-password" id="togglePassword">&#128065;</button>
+        </div>
+
         <button type="submit">Entrar</button>
+
+        <p class="footer">&copy; 2026 Restaurante Planalto</p>
     </form>
+
+    <script>
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('password');
+
+        togglePassword.addEventListener('click', function () {
+            const isPassword = passwordInput.type === 'password';
+            passwordInput.type = isPassword ? 'text' : 'password';
+            this.textContent = isPassword ? '\u{1F441}\u{200D}\u{1F5E8}' : '\u{1F441}';
+        });
+
+        document.getElementById('loginForm').addEventListener('submit', function (e) {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const errorMsg = document.getElementById('errorMsg');
+
+            if (!username || !password) {
+                e.preventDefault();
+                errorMsg.style.display = 'block';
+                return;
+            }
+            errorMsg.style.display = 'none';
+        });
+    </script>
 </body>
 </html>

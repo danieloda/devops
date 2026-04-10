@@ -1,6 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const mysql = require('mysql2/promise');
+const bcrypt = require('bcrypt');
 const path = require('path');
 
 const app = express();
@@ -40,9 +41,12 @@ app.get('/', (req, res) => res.render('login'));
 app.post('/login', async (req, res) => {
     const { username, password } = req.body;
     try {
-        const [rows] = await pool.query('SELECT * FROM users WHERE username = ? AND password = ?', [username, password]);
-        if (rows.length > 0) res.redirect('/dashboard');
-        else res.send('<h1>Login Inválido</h1><a href="/">Voltar</a>');
+        const [rows] = await pool.query('SELECT * FROM users WHERE username = ?', [username]);
+        if (rows.length > 0 && await bcrypt.compare(password, rows[0].password)) {
+            res.redirect('/dashboard');
+        } else {
+            res.send('<h1>Login Inválido</h1><a href="/">Voltar</a>');
+        }
     } catch (err) {
         res.status(500).send("Erro no banco.");
     }

@@ -1,4 +1,5 @@
 const request = require('supertest');
+const bcrypt = require('bcrypt');
 const { app, setPool, connectWithRetry } = require('./index');
 
 const mockQuery = jest.fn();
@@ -34,7 +35,8 @@ describe('GET /', () => {
 
 describe('POST /login', () => {
     it('should redirect to dashboard on valid credentials', async () => {
-        mockQuery.mockResolvedValue([[{ id: 1, username: 'admin', password: 'admin123' }]]);
+        mockQuery.mockResolvedValue([[{ id: 1, username: 'admin', password: '$2b$10$hash' }]]);
+        jest.spyOn(bcrypt, 'compare').mockResolvedValue(true);
 
         const res = await request(app)
             .post('/login')
@@ -42,14 +44,28 @@ describe('POST /login', () => {
 
         expect(res.status).toBe(302);
         expect(res.headers.location).toBe('/dashboard');
+        bcrypt.compare.mockRestore();
     });
 
     it('should show error on invalid credentials', async () => {
-        mockQuery.mockResolvedValue([[]]);
+        mockQuery.mockResolvedValue([[{ id: 1, username: 'admin', password: '$2b$10$hash' }]]);
+        jest.spyOn(bcrypt, 'compare').mockResolvedValue(false);
 
         const res = await request(app)
             .post('/login')
             .send('username=admin&password=wrong');
+
+        expect(res.status).toBe(200);
+        expect(res.text).toContain('Login Inválido');
+        bcrypt.compare.mockRestore();
+    });
+
+    it('should show error when user not found', async () => {
+        mockQuery.mockResolvedValue([[]]);
+
+        const res = await request(app)
+            .post('/login')
+            .send('username=nobody&password=wrong');
 
         expect(res.status).toBe(200);
         expect(res.text).toContain('Login Inválido');

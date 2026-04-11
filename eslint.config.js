@@ -21,6 +21,21 @@ module.exports = [
     },
   },
   {
-    ignores: ["node_modules/", "docs/"],
+    files: ["**/*.test.js"],
+    languageOptions: {
+      globals: {
+        describe: "readonly",
+        it: "readonly",
+        expect: "readonly",
+        beforeAll: "readonly",
+        beforeEach: "readonly",
+        afterAll: "readonly",
+        afterEach: "readonly",
+        jest: "readonly",
+      },
+    },
+  },
+  {
+    ignores: ["node_modules/", "docs/", "coverage/"],
   },
 ];

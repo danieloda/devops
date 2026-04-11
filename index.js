@@ -15,6 +15,8 @@ const dbConfig = {
 
 let pool;
 
+function setPool(p) { pool = p; }
+
 async function connectWithRetry() {
     console.log('🔍 [INFRA] Tentando conectar ao MySQL...');
     for (let i = 1; i <= 10; i++) {
@@ -58,6 +60,10 @@ app.get('/dashboard', async (req, res) => {
     res.render('dashboard', { items, orders });
 });
 
-connectWithRetry().then(() => {
-    app.listen(3000, () => console.log('🚀 MARMITATECH PRO ONLINE NA PORTA 3000'));
-});
+if (require.main === module) {
+    connectWithRetry().then(() => {
+        app.listen(3000, () => console.log('🚀 MARMITATECH PRO ONLINE NA PORTA 3000'));
+    });
+}
+
+module.exports = { app, setPool, connectWithRetry };

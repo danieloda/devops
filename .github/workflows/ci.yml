@@ -82,7 +82,7 @@ jobs:
       - name: Definir tags da imagem
         id: meta
         run: |
-          IMAGE="${{ secrets.DOCKERHUB_USERNAME }}/marmitatech-pro"
+          IMAGE="${{ secrets.DOCKERHUB_USERNAME }}/devops"
           SHA_SHORT=$(echo "${{ github.sha }}" | cut -c1-7)
           echo "image_tag=$IMAGE:$SHA_SHORT" >> "$GITHUB_OUTPUT"
           echo "image_latest=$IMAGE:latest" >> "$GITHUB_OUTPUT"

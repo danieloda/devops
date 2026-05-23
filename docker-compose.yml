@@ -1,32 +1,20 @@
 services:
-  db:
-    image: mysql:8.0
-    container_name: marmitatech-db
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: marmitadb
-      MYSQL_USER: user
-      MYSQL_PASSWORD: password
-    ports:
-      - "3306:3306"
-    volumes:
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
   app:
-    build: .
-    container_name: marmitatech-app
+    image: ${APP_IMAGE}
+    container_name: ${APP_CONTAINER_NAME}
+    restart: unless-stopped
     ports:
-      - "3000:3000"
-    environment:
-      DB_HOST: db
-      DB_USER: user
-      DB_PASS: password
-      DB_NAME: marmitadb
-    depends_on:
-      db:
-        condition: service_healthy
+      - "${APP_PORT}:3000"
+    env_file: .env
+    networks:
+      - rede_alunos
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+networks:
+  rede_alunos:
+    external: true

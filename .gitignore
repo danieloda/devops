@@ -1,2 +1,7 @@
 node_modules/
 CLAUDE.md
+.env
+coverage/
+*.log
+.DS_Store
+trivy-report.json

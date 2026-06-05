@@ -90,9 +90,44 @@ app.post('/add-item', async (req, res) => {
     }
 });
 
+// ---------- Cadastro de Pedidos (Issue #06) ----------
+// Associa um cliente a uma marmita disponível. Status inicial: "Aberto".
+app.post('/orders', async (req, res) => {
+    const { customer_name, item_id } = req.body;
+    const erros = [];
+    if (!customer_name || String(customer_name).trim() === '') {
+        erros.push('O nome do cliente é obrigatório.');
+    }
+    if (!item_id || Number.isNaN(Number(item_id))) {
+        erros.push('Selecione uma marmita válida.');
+    }
+    if (erros.length > 0) {
+        return res.status(400).send(`<h1>Erro 400 - Dados inválidos</h1><ul>${
+            erros.map(e => `<li>${e}</li>`).join('')
+        }</ul><a href="/dashboard">Voltar</a>`);
+    }
+    try {
+        const [found] = await pool.query('SELECT price FROM items WHERE id = ?', [Number(item_id)]);
+        if (found.length === 0) {
+            return res.status(400).send('<h1>Erro 400 - Marmita inexistente</h1><a href="/dashboard">Voltar</a>');
+        }
+        await pool.query(
+            'INSERT INTO orders (customer_name, item_id, total, status) VALUES (?, ?, ?, ?)',
+            [String(customer_name).trim(), Number(item_id), found[0].price, 'Aberto']
+        );
+        res.redirect('/dashboard');
+    } catch (err) {
+        res.status(500).send('Erro no banco.');
+    }
+});
+
 app.get('/dashboard', async (req, res) => {
     const [items] = await pool.query('SELECT * FROM items');
-    const [orders] = await pool.query('SELECT * FROM orders');
+    const [orders] = await pool.query(
+        `SELECT o.id, o.customer_name, o.status, o.total, o.created_at, i.name AS item_name
+         FROM orders o LEFT JOIN items i ON o.item_id = i.id
+         ORDER BY o.id DESC`
+    );
     res.render('dashboard', { items, orders });
 });
 

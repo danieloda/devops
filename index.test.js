@@ -122,11 +122,39 @@ describe('POST /add-item (validação - Issue #05)', () => {
     });
 });
 
+describe('POST /orders (Issue #06)', () => {
+    it('should create order with status Aberto on valid data', async () => {
+        mockQuery
+            .mockResolvedValueOnce([[{ price: 22.9 }]]) // SELECT price FROM items
+            .mockResolvedValueOnce([{ insertId: 1 }]);  // INSERT INTO orders
+        const res = await request(app)
+            .post('/orders')
+            .send('customer_name=João&item_id=1');
+        expect(res.status).toBe(302);
+        expect(res.headers.location).toBe('/dashboard');
+        expect(mockQuery).toHaveBeenLastCalledWith(
+            'INSERT INTO orders (customer_name, item_id, total, status) VALUES (?, ?, ?, ?)',
+            ['João', 1, 22.9, 'Aberto']
+        );
+    });
+
+    it('should return 400 when customer name is empty', async () => {
+        const res = await request(app).post('/orders').send('customer_name=&item_id=1');
+        expect(res.status).toBe(400);
+    });
+
+    it('should return 400 when item does not exist', async () => {
+        mockQuery.mockResolvedValueOnce([[]]); // SELECT price -> vazio
+        const res = await request(app).post('/orders').send('customer_name=Ana&item_id=999');
+        expect(res.status).toBe(400);
+    });
+});
+
 describe('GET /dashboard', () => {
     it('should render dashboard with items and orders', async () => {
         mockQuery
-            .mockResolvedValueOnce([[{ id: 1, name: 'Arroz', category: 'Base' }]])
-            .mockResolvedValueOnce([[{ id: 1, customer_name: 'João', status: 'Aberto' }]]);
+            .mockResolvedValueOnce([[{ id: 1, name: 'Marmita', category: 'Fitness', price: 22.9 }]])
+            .mockResolvedValueOnce([[{ id: 1, customer_name: 'João', item_name: 'Marmita', total: 22.9, status: 'Aberto' }]]);
 
         const res = await request(app).get('/dashboard');
         expect(res.status).toBe(200);

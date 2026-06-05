@@ -55,7 +55,7 @@ jobs:
         uses: sonarsource/sonarqube-scan-action@master
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          SONAR_HOST_URL: "https://devsecops.dcotech.com.br"
         with:
           args: >
             -Dsonar.branch.name=${{ github.ref_name }}
@@ -156,7 +156,7 @@ jobs:
         uses: sonarsource/sonarqube-scan-action@master
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          SONAR_HOST_URL: "https://devsecops.dcotech.com.br"
         with:
           args: >
             -Dsonar.branch.name=${{ github.ref_name }}

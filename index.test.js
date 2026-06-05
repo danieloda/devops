@@ -25,6 +25,14 @@ describe('connectWithRetry', () => {
     });
 });
 
+describe('GET /health (Issue #10)', () => {
+    it('should return 200 and status ok', async () => {
+        const res = await request(app).get('/health');
+        expect(res.status).toBe(200);
+        expect(res.body).toEqual({ status: 'ok' });
+    });
+});
+
 describe('GET /', () => {
     it('should render login page', async () => {
         const res = await request(app).get('/');

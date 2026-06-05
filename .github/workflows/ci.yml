@@ -52,6 +52,7 @@ jobs:
       - run: npm test
 
       - name: SonarQube Scan
+        continue-on-error: true   # não bloqueia o deploy se o servidor/token do Sonar falhar (403)
         uses: sonarsource/sonarqube-scan-action@master
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -147,6 +148,7 @@ jobs:
           cat trivy-report.json || echo "(vazio)"
 
       - name: SonarQube Scan (External Issues)
+        continue-on-error: true   # não bloqueia o deploy se o servidor/token do Sonar falhar (403)
         uses: sonarsource/sonarqube-scan-action@master
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

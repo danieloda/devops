@@ -1,1 +1,11 @@
 node_modules
+npm-debug.log
+coverage
+.git
+.github
+.gitignore
+*.test.js
+docs
+Dockerfile
+.dockerignore
+docker-compose*.yml

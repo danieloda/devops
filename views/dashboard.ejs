@@ -1,37 +1,116 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-br">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MarmitaTech - Dashboard</title>
     <style>
+        * { box-sizing: border-box; }
         body { font-family: sans-serif; padding: 20px; }
-        .grid { display: flex; gap: 20px; }
-        .card { border: 1px solid #ccc; padding: 15px; border-radius: 8px; width: 300px; }
+        input, select { width: 100%; padding: 8px; }
+        .grid { display: flex; gap: 20px; flex-wrap: wrap; }
+        .card { border: 1px solid #ccc; padding: 15px; border-radius: 8px; width: 300px; max-width: 100%; }
+        .kanban { display: flex; gap: 15px; flex-wrap: wrap; }
+        .kanban-col { flex: 1; min-width: 200px; background: #f4f4f7; border-radius: 8px; padding: 10px; }
+        .col-title { margin: 0 0 10px; padding: 6px; border-radius: 6px; color: #fff; text-align: center; font-size: 15px; }
+        .col-aberto { background: #6c757d; }
+        .col-cozinha { background: #e94560; }
+        .col-entrega { background: #f39c12; }
+        .col-entregue { background: #27ae60; }
+        .kanban-card { background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 10px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+        .kanban-card .meta { font-size: 13px; color: #555; margin: 5px 0; }
+        .btn-advance { background: #e94560; color: #fff; border: none; padding: 6px 10px; border-radius: 5px; cursor: pointer; width: 100%; }
+        .btn-advance:hover { background: #c81e3c; }
+        .btn-export { display: inline-block; margin: 5px 0 20px; padding: 10px 16px; background: #27ae60; color: #fff; text-decoration: none; border-radius: 6px; font-weight: bold; }
+        .btn-export:hover { background: #1e8449; }
+        /* Toasts (Issue #09) */
+        .toast { position: fixed; top: 20px; right: 20px; left: auto; padding: 14px 20px; border-radius: 8px; color: #fff; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,.2); z-index: 999; animation: slideIn .3s ease; }
+        .toast-ok { background: #27ae60; }
+        .toast-err { background: #e94560; }
+        @keyframes slideIn { from { transform: translateX(120%); } to { transform: translateX(0); } }
+        /* Responsividade Mobile - operável em 375px (Issue #09) */
+        @media (max-width: 600px) {
+            body { padding: 12px; }
+            h1 { font-size: 1.4rem; }
+            .card { width: 100%; }
+            .kanban { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            .kanban-col { min-width: 75vw; }
+            .toast { left: 12px; right: 12px; text-align: center; }
+        }
     </style>
 </head>
 <body>
+    <% if (toastOk) { %><div class="toast toast-ok" id="toast"><%= toastOk %></div><% } %>
+    <% if (toastErr) { %><div class="toast toast-err" id="toast"><%= toastErr %></div><% } %>
     <h1>Painel Administrativo - MarmitaTech</h1>
+    <a href="/admin/export" class="btn-export">⬇️ Baixar Relatório (CSV)</a>
     <div class="grid">
         <div class="card">
-            <h3>Novo Item (Ingrediente)</h3>
+            <h3>Nova Marmita</h3>
             <form action="/add-item" method="POST">
-                <input type="text" name="name" placeholder="Nome (Ex: Batata Doce)" required><br><br>
-                <input type="text" name="category" placeholder="Categoria (Ex: Carboidrato)"><br><br>
-                <button type="submit">Cadastrar Item</button>
+                <input type="text" name="name" placeholder="Nome (Ex: Marmita Fitness)" required><br><br>
+                <input type="text" name="category" placeholder="Categoria (Ex: Fitness)"><br><br>
+                <input type="number" name="price" step="0.01" min="0.01" placeholder="Preço (Ex: 22.90)" required><br><br>
+                <button type="submit">Cadastrar Marmita</button>
             </form>
         </div>
 
         <div class="card">
-            <h3>Itens Cadastrados</h3>
+            <h3>Marmitas Cadastradas</h3>
             <ul>
                 <% items.forEach(item => { %>
-                    <li><%= item.name %> (<%= item.category %>)</li>
+                    <li><%= item.name %> (<%= item.category %>) — R$ <%= Number(item.price).toFixed(2) %></li>
                 <% }) %>
             </ul>
+        </div>
+
+        <div class="card">
+            <h3>Novo Pedido</h3>
+            <form action="/orders" method="POST">
+                <input type="text" name="customer_name" placeholder="Nome do cliente" required><br><br>
+                <select name="item_id" required>
+                    <option value="" disabled selected>Selecione a marmita</option>
+                    <% items.forEach(item => { %>
+                        <option value="<%= item.id %>"><%= item.name %> — R$ <%= Number(item.price).toFixed(2) %></option>
+                    <% }) %>
+                </select><br><br>
+                <button type="submit">Registrar Pedido</button>
+            </form>
         </div>
     </div>
 
     <hr>
-    <h2>📦 Pedidos Ativos</h2>
-    <p><i>Aqui será implementado o Kanban nas próximas aulas...</i></p>
+    <h2>🍱 Kanban da Cozinha</h2>
+    <% const COLUNAS = ['Aberto', 'Cozinha', 'Entrega', 'Entregue']; %>
+    <div class="kanban">
+        <% COLUNAS.forEach(coluna => { %>
+            <div class="kanban-col">
+                <h3 class="col-title col-<%= coluna.toLowerCase() %>"><%= coluna %></h3>
+                <% orders.filter(o => o.status === coluna).forEach(order => { %>
+                    <div class="kanban-card">
+                        <strong>#<%= order.id %> · <%= order.customer_name %></strong>
+                        <div class="meta"><%= order.item_name || '-' %> — R$ <%= Number(order.total || 0).toFixed(2) %></div>
+                        <% if (coluna !== 'Entregue') { %>
+                            <form action="/orders/<%= order.id %>/advance" method="POST">
+                                <button type="submit" class="btn-advance">Avançar →</button>
+                            </form>
+                        <% } %>
+                    </div>
+                <% }) %>
+            </div>
+        <% }) %>
+    </div>
+
+    <script>
+        // Auto-dismiss do toast após 3s + limpa a query string da URL
+        const toast = document.getElementById('toast');
+        if (toast) {
+            setTimeout(() => { toast.style.transition = 'opacity .4s'; toast.style.opacity = '0'; }, 3000);
+            setTimeout(() => toast.remove(), 3400);
+            if (window.history.replaceState) {
+                window.history.replaceState({}, document.title, '/dashboard');
+            }
+        }
+    </script>
 </body>
 </html>

@@ -38,6 +38,21 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
+// ---------- Validação de Input (Issue #05) ----------
+// Rejeita dados inválidos antes de tocar no banco. Retorna lista de erros.
+function validarItem({ name, price }) {
+    const erros = [];
+    if (!name || String(name).trim() === '') {
+        erros.push('O nome da marmita é obrigatório.');
+    }
+    const preco = Number(price);
+    if (price === undefined || price === null || String(price).trim() === '' ||
+        Number.isNaN(preco) || preco <= 0) {
+        erros.push('O preço deve ser um número positivo.');
+    }
+    return erros;
+}
+
 app.get('/', (req, res) => res.render('login'));
 
 app.post('/login', async (req, res) => {
@@ -51,6 +66,27 @@ app.post('/login', async (req, res) => {
         }
     } catch (err) {
         res.status(500).send("Erro no banco.");
+    }
+});
+
+// ---------- Cadastro de Item/Marmita (Issues #05, #06) ----------
+// Validação de input + Prepared Statement (parâmetros ?) contra SQL Injection.
+app.post('/add-item', async (req, res) => {
+    const { name, category, price } = req.body;
+    const erros = validarItem({ name, price });
+    if (erros.length > 0) {
+        return res.status(400).send(`<h1>Erro 400 - Dados inválidos</h1><ul>${
+            erros.map(e => `<li>${e}</li>`).join('')
+        }</ul><a href="/dashboard">Voltar</a>`);
+    }
+    try {
+        await pool.query(
+            'INSERT INTO items (name, category, price) VALUES (?, ?, ?)',
+            [String(name).trim(), String(category || '').trim(), Number(price)]
+        );
+        res.redirect('/dashboard');
+    } catch (err) {
+        res.status(500).send('Erro no banco.');
     }
 });
 

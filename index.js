@@ -84,7 +84,7 @@ app.post('/add-item', async (req, res) => {
             'INSERT INTO items (name, category, price) VALUES (?, ?, ?)',
             [String(name).trim(), String(category || '').trim(), Number(price)]
         );
-        res.redirect('/dashboard');
+        res.redirect('/dashboard?ok=' + encodeURIComponent('Marmita cadastrada com sucesso!'));
     } catch (err) {
         res.status(500).send('Erro no banco.');
     }
@@ -115,7 +115,7 @@ app.post('/orders', async (req, res) => {
             'INSERT INTO orders (customer_name, item_id, total, status) VALUES (?, ?, ?, ?)',
             [String(customer_name).trim(), Number(item_id), found[0].price, 'Aberto']
         );
-        res.redirect('/dashboard');
+        res.redirect('/dashboard?ok=' + encodeURIComponent('Pedido registrado com sucesso!'));
     } catch (err) {
         res.status(500).send('Erro no banco.');
     }
@@ -139,7 +139,7 @@ app.post('/orders/:id/advance', async (req, res) => {
         if (proximo) {
             await pool.query('UPDATE orders SET status = ? WHERE id = ?', [proximo, id]);
         }
-        res.redirect('/dashboard');
+        res.redirect('/dashboard?ok=' + encodeURIComponent('Status do pedido atualizado!'));
     } catch (err) {
         res.status(500).send('Erro no banco.');
     }
@@ -178,7 +178,12 @@ app.get('/dashboard', async (req, res) => {
          FROM orders o LEFT JOIN items i ON o.item_id = i.id
          ORDER BY o.id DESC`
     );
-    res.render('dashboard', { items, orders });
+    res.render('dashboard', {
+        items,
+        orders,
+        toastOk: req.query.ok || null,
+        toastErr: req.query.err || null
+    });
 });
 
 if (require.main === module) {

@@ -1,11 +1,15 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-br">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MarmitaTech - Dashboard</title>
     <style>
+        * { box-sizing: border-box; }
         body { font-family: sans-serif; padding: 20px; }
+        input, select { width: 100%; padding: 8px; }
         .grid { display: flex; gap: 20px; flex-wrap: wrap; }
-        .card { border: 1px solid #ccc; padding: 15px; border-radius: 8px; width: 300px; }
+        .card { border: 1px solid #ccc; padding: 15px; border-radius: 8px; width: 300px; max-width: 100%; }
         .kanban { display: flex; gap: 15px; flex-wrap: wrap; }
         .kanban-col { flex: 1; min-width: 200px; background: #f4f4f7; border-radius: 8px; padding: 10px; }
         .col-title { margin: 0 0 10px; padding: 6px; border-radius: 6px; color: #fff; text-align: center; font-size: 15px; }
@@ -19,9 +23,25 @@
         .btn-advance:hover { background: #c81e3c; }
         .btn-export { display: inline-block; margin: 5px 0 20px; padding: 10px 16px; background: #27ae60; color: #fff; text-decoration: none; border-radius: 6px; font-weight: bold; }
         .btn-export:hover { background: #1e8449; }
+        /* Toasts (Issue #09) */
+        .toast { position: fixed; top: 20px; right: 20px; left: auto; padding: 14px 20px; border-radius: 8px; color: #fff; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,.2); z-index: 999; animation: slideIn .3s ease; }
+        .toast-ok { background: #27ae60; }
+        .toast-err { background: #e94560; }
+        @keyframes slideIn { from { transform: translateX(120%); } to { transform: translateX(0); } }
+        /* Responsividade Mobile - operável em 375px (Issue #09) */
+        @media (max-width: 600px) {
+            body { padding: 12px; }
+            h1 { font-size: 1.4rem; }
+            .card { width: 100%; }
+            .kanban { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            .kanban-col { min-width: 75vw; }
+            .toast { left: 12px; right: 12px; text-align: center; }
+        }
     </style>
 </head>
 <body>
+    <% if (toastOk) { %><div class="toast toast-ok" id="toast"><%= toastOk %></div><% } %>
+    <% if (toastErr) { %><div class="toast toast-err" id="toast"><%= toastErr %></div><% } %>
     <h1>Painel Administrativo - MarmitaTech</h1>
     <a href="/admin/export" class="btn-export">⬇️ Baixar Relatório (CSV)</a>
     <div class="grid">
@@ -80,5 +100,17 @@
             </div>
         <% }) %>
     </div>
+
+    <script>
+        // Auto-dismiss do toast após 3s + limpa a query string da URL
+        const toast = document.getElementById('toast');
+        if (toast) {
+            setTimeout(() => { toast.style.transition = 'opacity .4s'; toast.style.opacity = '0'; }, 3000);
+            setTimeout(() => toast.remove(), 3400);
+            if (window.history.replaceState) {
+                window.history.replaceState({}, document.title, '/dashboard');
+            }
+        }
+    </script>
 </body>
 </html>

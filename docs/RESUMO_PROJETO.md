@@ -128,7 +128,7 @@ push/PR ────┤                └─ docker_build ┴─ release_docker
 O deploy está **armado e seguro por padrão** (atrás do flag `ENABLE_EC2_DEPLOY`). Para publicar na EC2:
 
 ### Passo 1 — descobrir 2 dados da EC2
-- **IP/DNS público** da EC2 (provavelmente `54.89.88.5`, a mesma do `dbcentral` — confirme no `.env.example` / console AWS).
+- **IP/DNS público** da EC2 (a máquina que roda a rede `rede_alunos` + o container `mysql-infra`) — pedir ao professor / console AWS.
 - **Usuário SSH** (geralmente `ubuntu` em AMIs Ubuntu; `ec2-user` em Amazon Linux). Veja o comando que você usa: `ssh -i chave.pem USUARIO@IP`.
 
 ### Passo 2 — configurar secrets e o flag (uma vez)
@@ -137,8 +137,8 @@ O deploy está **armado e seguro por padrão** (atrás do flag `ENABLE_EC2_DEPLO
 gh secret set EC2_SSH_KEY < caminho/para/chave.pem
 printf 'SEU_IP'        | gh secret set EC2_HOST
 printf 'ubuntu'        | gh secret set EC2_USER
-# Banco central (já confirmado no .env.example)
-printf '54.89.88.5'      | gh secret set DB_HOST
+# Banco central (do .env: container mysql-infra na rede rede_alunos)
+printf 'mysql-infra'     | gh secret set DB_HOST
 printf 'root'            | gh secret set DB_USER
 printf 'password'        | gh secret set DB_PASS
 printf 'danielodadevops' | gh secret set DB_NAME
@@ -149,7 +149,7 @@ gh variable set ENABLE_EC2_DEPLOY --body true
 ### Passo 3 — migrar o schema do banco central (uma vez)
 ```bash
 # Na EC2 (ou via SSH):
-sudo docker exec -i dbcentral mysql -uroot -ppassword < scripts/migrate.sql
+sudo docker exec -i mysql-infra mysql -uroot -ppassword < scripts/migrate.sql
 # Se o banco já tiver tabelas ANTIGAS (sem price/item_id), rode os ALTERs comentados no fim do migrate.sql.
 ```
 

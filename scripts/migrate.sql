@@ -1,7 +1,7 @@
 -- ==========================================================================
--- Migration do banco compartilhado `dbcentral` na EC2.
+-- Migration do banco compartilhado `mysql-infra` na EC2 (rede rede_alunos).
 -- Roda automaticamente no job de deploy da pipeline, ou manualmente via:
---   sudo docker exec -i dbcentral mysql -uroot -ppassword < scripts/migrate.sql
+--   sudo docker exec -i mysql-infra mysql -uroot -ppassword < scripts/migrate.sql
 --
 -- Recria items/orders com o schema novo (price, item_id, total, created_at).
 -- Seguro: opera apenas no banco do aluno (danielodadevops). O admin é mantido.

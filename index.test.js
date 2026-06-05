@@ -177,6 +177,27 @@ describe('POST /orders/:id/advance (Kanban - Issue #07)', () => {
     });
 });
 
+describe('GET /admin/export (CSV - Issue #08)', () => {
+    it('should return CSV with correct headers and content', async () => {
+        mockQuery.mockResolvedValueOnce([[
+            { id: 1, customer_name: 'João', item_name: 'Marmita Fitness', total: 22.9, status: 'Aberto', created_at: '2026-06-05T12:00:00Z' }
+        ]]);
+        const res = await request(app).get('/admin/export');
+        expect(res.status).toBe(200);
+        expect(res.headers['content-type']).toMatch(/text\/csv/);
+        expect(res.headers['content-disposition']).toMatch(/attachment; filename="relatorio-vendas.csv"/);
+        expect(res.text).toContain('ID,Cliente,Marmita,Valor,Status,Data');
+        expect(res.text).toContain('"João"');
+        expect(res.text).toContain('22.90');
+    });
+
+    it('should return 500 on database error', async () => {
+        mockQuery.mockRejectedValueOnce(new Error('DB error'));
+        const res = await request(app).get('/admin/export');
+        expect(res.status).toBe(500);
+    });
+});
+
 describe('GET /dashboard', () => {
     it('should render dashboard with items and orders', async () => {
         mockQuery

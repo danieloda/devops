@@ -145,6 +145,32 @@ app.post('/orders/:id/advance', async (req, res) => {
     }
 });
 
+// ---------- Relatório de Vendas em CSV (Issue #08) ----------
+// Exporta o histórico de pedidos para controle financeiro (abre no Excel).
+app.get('/admin/export', async (req, res) => {
+    try {
+        const [orders] = await pool.query(
+            `SELECT o.id, o.customer_name, i.name AS item_name, o.total, o.status, o.created_at
+             FROM orders o LEFT JOIN items i ON o.item_id = i.id
+             ORDER BY o.id`
+        );
+        const cabecalho = 'ID,Cliente,Marmita,Valor,Status,Data';
+        const linhas = orders.map(o => {
+            const data = o.created_at ? new Date(o.created_at).toISOString().slice(0, 10) : '';
+            const cliente = `"${String(o.customer_name || '').replace(/"/g, '""')}"`;
+            const marmita = `"${String(o.item_name || '').replace(/"/g, '""')}"`;
+            return [o.id, cliente, marmita, Number(o.total || 0).toFixed(2), o.status, data].join(',');
+        });
+        // BOM (\uFEFF) garante acentuação correta ao abrir no Excel.
+        const csv = '\uFEFF' + [cabecalho, ...linhas].join('\n');
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', 'attachment; filename="relatorio-vendas.csv"');
+        res.send(csv);
+    } catch (err) {
+        res.status(500).send('Erro ao gerar relatório.');
+    }
+});
+
 app.get('/dashboard', async (req, res) => {
     const [items] = await pool.query('SELECT * FROM items');
     const [orders] = await pool.query(

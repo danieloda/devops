@@ -1,0 +1,28 @@
+# Dependabot - Software Composition Analysis (SCA)
+# Monitora automaticamente vulnerabilidades em dependências de terceiros.
+# Issue #02 - Implementação de SCA e Análise de Dependências
+version: 2
+updates:
+  # Dependências da aplicação (npm)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    labels:
+      - "security"
+      - "dependencies"
+    commit-message:
+      prefix: "fix(deps)"
+      include: "scope"
+
+  # Versões das GitHub Actions usadas na pipeline
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "ci"
+      - "dependencies"
+    commit-message:
+      prefix: "ci(deps)"

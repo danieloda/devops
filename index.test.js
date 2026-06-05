@@ -83,6 +83,45 @@ describe('POST /login', () => {
     });
 });
 
+describe('POST /add-item (validação - Issue #05)', () => {
+    it('should create item and redirect on valid data', async () => {
+        mockQuery.mockResolvedValue([{ insertId: 1 }]);
+        const res = await request(app)
+            .post('/add-item')
+            .send('name=Marmita Fitness&category=Fitness&price=22.90');
+        expect(res.status).toBe(302);
+        expect(res.headers.location).toBe('/dashboard');
+        expect(mockQuery).toHaveBeenCalledWith(
+            'INSERT INTO items (name, category, price) VALUES (?, ?, ?)',
+            ['Marmita Fitness', 'Fitness', 22.9]
+        );
+    });
+
+    it('should return 400 when name is empty', async () => {
+        const res = await request(app)
+            .post('/add-item')
+            .send('name=&category=Fitness&price=22.90');
+        expect(res.status).toBe(400);
+        expect(mockQuery).not.toHaveBeenCalled();
+    });
+
+    it('should return 400 when price is negative', async () => {
+        const res = await request(app)
+            .post('/add-item')
+            .send('name=Marmita&price=-5');
+        expect(res.status).toBe(400);
+        expect(mockQuery).not.toHaveBeenCalled();
+    });
+
+    it('should return 400 when price is not a number', async () => {
+        const res = await request(app)
+            .post('/add-item')
+            .send('name=Marmita&price=abc');
+        expect(res.status).toBe(400);
+        expect(mockQuery).not.toHaveBeenCalled();
+    });
+});
+
 describe('GET /dashboard', () => {
     it('should render dashboard with items and orders', async () => {
         mockQuery

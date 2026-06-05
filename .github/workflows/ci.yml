@@ -1,5 +1,9 @@
-name: CI/CD - Build, Lint, Sonar, Release & Trivy
+name: CI/CD - Build, Lint, Sonar, Docker, Trivy, Release & Deploy
 
+# Esteira por nível de confiança da branch (modelo da aula):
+#   dev/PR  -> CI (Build, Lint, Sonar) + validação de build Docker
+#   staging -> Entrega Contínua: Release Docker Hub + Trivy + Deploy EC2
+#   main    -> Implantação Contínua: Release + Deploy em produção (EC2)
 on:
   push:
     branches: ["dev", "staging", "main"]
@@ -8,7 +12,7 @@ on:
 
 jobs:
   # ==========================================================================
-  # CI — roda em todas as branches/PRs
+  # CI — roda em todas as branches/PRs (Fail Fast com `needs`)
   # ==========================================================================
   build:
     name: Build (sintaxe + deps)
@@ -57,12 +61,28 @@ jobs:
             -Dsonar.branch.name=${{ github.ref_name }}
 
   # ==========================================================================
-  # RELEASE — só em push na branch staging
+  # #03 — VALIDAÇÃO DE BUILD DOCKER — em todo push/PR (impede merge se quebrar)
+  # ==========================================================================
+  docker_build:
+    name: Validação de Build Docker
+    needs: test_sonar
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validar que a imagem Docker constrói
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          tags: marmitatech-pro:ci
+
+  # ==========================================================================
+  # RELEASE — Build & Push Docker Hub (push em staging ou main)
   # ==========================================================================
   release_docker:
     name: Release - Build & Push Docker Hub
-    needs: test_sonar
-    if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
+    needs: docker_build
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     outputs:
       image_tag: ${{ steps.meta.outputs.image_tag }}
@@ -79,7 +99,7 @@ jobs:
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Definir tags da imagem
+      - name: Definir tags da imagem (SemVer-friendly)
         id: meta
         run: |
           IMAGE="${{ secrets.DOCKERHUB_USERNAME }}/devops"
@@ -99,12 +119,12 @@ jobs:
           cache-to: type=gha,mode=max
 
   # ==========================================================================
-  # TRIVY → SONAR EXTERNAL ISSUES — só em push na branch staging
+  # TRIVY → SONAR EXTERNAL ISSUES — varredura de CVE na imagem (staging/main)
   # ==========================================================================
   trivy_sonar:
     name: Trivy Scan → Sonar External Issues
     needs: release_docker
-    if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -135,3 +155,54 @@ jobs:
           args: >
             -Dsonar.branch.name=${{ github.ref_name }}
             -Dsonar.externalIssuesReportPaths=trivy-report.json
+
+  # ==========================================================================
+  # DEPLOY na EC2 via SSH/SCP — Entrega/Implantação Contínua (staging/main)
+  # ==========================================================================
+  deploy:
+    name: Deploy na EC2 (SSH/SCP)
+    needs: [release_docker, trivy_sonar]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Copiar arquivos de deploy para a EC2 (SCP)
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "docker-compose.yml,scripts/migrate.sql"
+          target: "~/danielodadevops"
+
+      - name: Deploy remoto (SSH → pull + up)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+            cd ~/danielodadevops
+
+            # .env de produção (segredos injetados pelo GitHub)
+            cat > .env <<EOF
+            APP_CONTAINER_NAME=danielodadevops
+            APP_PORT=8081
+            APP_IMAGE=${{ secrets.DOCKERHUB_USERNAME }}/devops:latest
+            DB_HOST=${{ secrets.DB_HOST }}
+            DB_USER=${{ secrets.DB_USER }}
+            DB_PASS=${{ secrets.DB_PASS }}
+            DB_NAME=${{ secrets.DB_NAME }}
+            EOF
+
+            # rede compartilhada da turma (idempotente)
+            sudo docker network create rede_alunos 2>/dev/null || true
+
+            # baixa a imagem nova do registry e sobe (imutabilidade)
+            sudo docker compose pull
+            sudo docker compose up -d
+
+            echo "Deploy concluído. Containers:"
+            sudo docker compose ps

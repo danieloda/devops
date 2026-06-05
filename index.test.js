@@ -150,6 +150,33 @@ describe('POST /orders (Issue #06)', () => {
     });
 });
 
+describe('POST /orders/:id/advance (Kanban - Issue #07)', () => {
+    it('should advance status from Aberto to Cozinha', async () => {
+        mockQuery
+            .mockResolvedValueOnce([[{ status: 'Aberto' }]]) // SELECT status
+            .mockResolvedValueOnce([{ affectedRows: 1 }]);    // UPDATE
+        const res = await request(app).post('/orders/1/advance');
+        expect(res.status).toBe(302);
+        expect(mockQuery).toHaveBeenLastCalledWith(
+            'UPDATE orders SET status = ? WHERE id = ?',
+            ['Cozinha', 1]
+        );
+    });
+
+    it('should not update when order is already Entregue (terminal)', async () => {
+        mockQuery.mockResolvedValueOnce([[{ status: 'Entregue' }]]);
+        const res = await request(app).post('/orders/1/advance');
+        expect(res.status).toBe(302);
+        expect(mockQuery).toHaveBeenCalledTimes(1); // só o SELECT, sem UPDATE
+    });
+
+    it('should return 404 when order not found', async () => {
+        mockQuery.mockResolvedValueOnce([[]]);
+        const res = await request(app).post('/orders/999/advance');
+        expect(res.status).toBe(404);
+    });
+});
+
 describe('GET /dashboard', () => {
     it('should render dashboard with items and orders', async () => {
         mockQuery

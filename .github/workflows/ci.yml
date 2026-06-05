@@ -122,14 +122,12 @@ jobs:
   # TRIVY → SONAR EXTERNAL ISSUES — varredura de CVE na imagem (staging/main)
   # ==========================================================================
   trivy_sonar:
-    name: Trivy Scan → Sonar External Issues
+    name: Trivy - Varredura de CVEs na Imagem (DevSecOps)
     needs: release_docker
     if: github.event_name == 'push' && (github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Login no Docker Hub (para o Trivy puxar a imagem)
         uses: docker/login-action@v3
@@ -137,30 +135,27 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Trivy scan (template Sonar)
+      - name: Trivy scan (relatório JSON)
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/devops:latest
-          format: template
-          template: "@/contrib/sonarqube.tpl"
+          format: json
           output: trivy-report.json
           severity: CRITICAL,HIGH,MEDIUM
           exit-code: "0"
 
-      - name: Exibir relatório Trivy (debug)
+      - name: Resumo de CVEs encontrados (Shift-Left)
         run: |
-          echo "===== TRIVY REPORT ====="
-          cat trivy-report.json || echo "(vazio)"
+          echo "===== TRIVY: vulnerabilidades na imagem ====="
+          TOTAL=$(jq '[.Results[]?.Vulnerabilities // [] | length] | add // 0' trivy-report.json)
+          echo "Total de CVEs (CRITICAL/HIGH/MEDIUM): ${TOTAL:-0}"
+          jq -r '.Results[]?.Vulnerabilities // [] | .[] | "  \(.Severity)\t\(.VulnerabilityID)\t\(.PkgName) \(.InstalledVersion)"' trivy-report.json | sort -u | head -50 || true
 
-      - name: SonarQube Scan (External Issues)
-        uses: sonarsource/sonarqube-scan-action@master
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: "https://devsecops.dcotech.com.br"
+      - name: Upload do relatório Trivy (artefato de auditoria)
+        uses: actions/upload-artifact@v4
         with:
-          args: >
-            -Dsonar.branch.name=${{ github.ref_name }}
-            -Dsonar.externalIssuesReportPaths=trivy-report.json
+          name: trivy-report
+          path: trivy-report.json
 
   # ==========================================================================
   # DEPLOY na EC2 via SSH/SCP — Entrega/Implantação Contínua (staging/main)

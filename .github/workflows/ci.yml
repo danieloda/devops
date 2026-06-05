@@ -162,7 +162,13 @@ jobs:
   deploy:
     name: Deploy na EC2 (SSH/SCP)
     needs: [release_docker, trivy_sonar]
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main')
+    # SEGURO POR PADRÃO: o deploy só roda se o feature flag estiver explicitamente ligado.
+    # Para ativar o deploy ao vivo: defina a variável de repositório ENABLE_EC2_DEPLOY=true
+    # (Settings > Secrets and variables > Actions > Variables) + os secrets EC2_HOST/EC2_USER.
+    if: >
+      vars.ENABLE_EC2_DEPLOY == 'true' &&
+      github.event_name == 'push' &&
+      (github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

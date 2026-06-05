@@ -52,7 +52,6 @@ jobs:
       - run: npm test
 
       - name: SonarQube Scan
-        continue-on-error: true   # não bloqueia o deploy se o servidor/token do Sonar falhar (403)
         uses: sonarsource/sonarqube-scan-action@master
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -132,10 +131,16 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Login no Docker Hub (para o Trivy puxar a imagem)
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - name: Trivy scan (template Sonar)
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ needs.release_docker.outputs.image_tag }}
+          image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/devops:latest
           format: template
           template: "@/contrib/sonarqube.tpl"
           output: trivy-report.json
@@ -148,7 +153,6 @@ jobs:
           cat trivy-report.json || echo "(vazio)"
 
       - name: SonarQube Scan (External Issues)
-        continue-on-error: true   # não bloqueia o deploy se o servidor/token do Sonar falhar (403)
         uses: sonarsource/sonarqube-scan-action@master
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

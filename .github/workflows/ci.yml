@@ -167,7 +167,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Verificar se os secrets da EC2 estão configurados
+        id: gate
+        run: |
+          if [ -n "${{ secrets.EC2_HOST }}" ] && [ -n "${{ secrets.EC2_USER }}" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "✅ Secrets da EC2 presentes — deploy habilitado."
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::EC2_HOST/EC2_USER não configurados — deploy pulado. Adicione os secrets e re-execute este job para publicar na EC2."
+          fi
+
       - name: Copiar arquivos de deploy para a EC2 (SCP)
+        if: steps.gate.outputs.ready == 'true'
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -177,6 +189,7 @@ jobs:
           target: "~/danielodadevops"
 
       - name: Deploy remoto (SSH → pull + up)
+        if: steps.gate.outputs.ready == 'true'
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}

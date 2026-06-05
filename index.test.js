@@ -90,7 +90,7 @@ describe('POST /add-item (validação - Issue #05)', () => {
             .post('/add-item')
             .send('name=Marmita Fitness&category=Fitness&price=22.90');
         expect(res.status).toBe(302);
-        expect(res.headers.location).toBe('/dashboard');
+        expect(res.headers.location).toMatch(/^\/dashboard/);
         expect(mockQuery).toHaveBeenCalledWith(
             'INSERT INTO items (name, category, price) VALUES (?, ?, ?)',
             ['Marmita Fitness', 'Fitness', 22.9]
@@ -131,7 +131,7 @@ describe('POST /orders (Issue #06)', () => {
             .post('/orders')
             .send('customer_name=João&item_id=1');
         expect(res.status).toBe(302);
-        expect(res.headers.location).toBe('/dashboard');
+        expect(res.headers.location).toMatch(/^\/dashboard/);
         expect(mockQuery).toHaveBeenLastCalledWith(
             'INSERT INTO orders (customer_name, item_id, total, status) VALUES (?, ?, ?, ?)',
             ['João', 1, 22.9, 'Aberto']

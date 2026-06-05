@@ -53,6 +53,9 @@ function validarItem({ name, price }) {
     return erros;
 }
 
+// Healthcheck para Docker/EC2 (Issue #10) — usado pelo HEALTHCHECK do container.
+app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
+
 app.get('/', (req, res) => res.render('login'));
 
 app.post('/login', async (req, res) => {

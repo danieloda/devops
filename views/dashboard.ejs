@@ -29,10 +29,35 @@
                 <% }) %>
             </ul>
         </div>
+
+        <div class="card">
+            <h3>Novo Pedido</h3>
+            <form action="/orders" method="POST">
+                <input type="text" name="customer_name" placeholder="Nome do cliente" required><br><br>
+                <select name="item_id" required>
+                    <option value="" disabled selected>Selecione a marmita</option>
+                    <% items.forEach(item => { %>
+                        <option value="<%= item.id %>"><%= item.name %> — R$ <%= Number(item.price).toFixed(2) %></option>
+                    <% }) %>
+                </select><br><br>
+                <button type="submit">Registrar Pedido</button>
+            </form>
+        </div>
     </div>
 
     <hr>
     <h2>📦 Pedidos Ativos</h2>
-    <p><i>Aqui será implementado o Kanban nas próximas aulas...</i></p>
+    <table border="1" cellpadding="8" style="border-collapse: collapse;">
+        <tr><th>#</th><th>Cliente</th><th>Marmita</th><th>Valor</th><th>Status</th></tr>
+        <% orders.forEach(order => { %>
+            <tr>
+                <td><%= order.id %></td>
+                <td><%= order.customer_name %></td>
+                <td><%= order.item_name || '-' %></td>
+                <td>R$ <%= Number(order.total || 0).toFixed(2) %></td>
+                <td><%= order.status %></td>
+            </tr>
+        <% }) %>
+    </table>
 </body>
 </html>

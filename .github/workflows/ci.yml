@@ -65,7 +65,7 @@ jobs:
   # ==========================================================================
   docker_build:
     name: Validação de Build Docker
-    needs: test_sonar
+    needs: lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -81,7 +81,7 @@ jobs:
   # ==========================================================================
   release_docker:
     name: Release - Build & Push Docker Hub
-    needs: docker_build
+    needs: [test_sonar, docker_build]
     if: github.event_name == 'push' && (github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     outputs:

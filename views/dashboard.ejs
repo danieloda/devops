@@ -4,8 +4,19 @@
     <title>MarmitaTech - Dashboard</title>
     <style>
         body { font-family: sans-serif; padding: 20px; }
-        .grid { display: flex; gap: 20px; }
+        .grid { display: flex; gap: 20px; flex-wrap: wrap; }
         .card { border: 1px solid #ccc; padding: 15px; border-radius: 8px; width: 300px; }
+        .kanban { display: flex; gap: 15px; flex-wrap: wrap; }
+        .kanban-col { flex: 1; min-width: 200px; background: #f4f4f7; border-radius: 8px; padding: 10px; }
+        .col-title { margin: 0 0 10px; padding: 6px; border-radius: 6px; color: #fff; text-align: center; font-size: 15px; }
+        .col-aberto { background: #6c757d; }
+        .col-cozinha { background: #e94560; }
+        .col-entrega { background: #f39c12; }
+        .col-entregue { background: #27ae60; }
+        .kanban-card { background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 10px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+        .kanban-card .meta { font-size: 13px; color: #555; margin: 5px 0; }
+        .btn-advance { background: #e94560; color: #fff; border: none; padding: 6px 10px; border-radius: 5px; cursor: pointer; width: 100%; }
+        .btn-advance:hover { background: #c81e3c; }
     </style>
 </head>
 <body>
@@ -46,18 +57,25 @@
     </div>
 
     <hr>
-    <h2>📦 Pedidos Ativos</h2>
-    <table border="1" cellpadding="8" style="border-collapse: collapse;">
-        <tr><th>#</th><th>Cliente</th><th>Marmita</th><th>Valor</th><th>Status</th></tr>
-        <% orders.forEach(order => { %>
-            <tr>
-                <td><%= order.id %></td>
-                <td><%= order.customer_name %></td>
-                <td><%= order.item_name || '-' %></td>
-                <td>R$ <%= Number(order.total || 0).toFixed(2) %></td>
-                <td><%= order.status %></td>
-            </tr>
+    <h2>🍱 Kanban da Cozinha</h2>
+    <% const COLUNAS = ['Aberto', 'Cozinha', 'Entrega', 'Entregue']; %>
+    <div class="kanban">
+        <% COLUNAS.forEach(coluna => { %>
+            <div class="kanban-col">
+                <h3 class="col-title col-<%= coluna.toLowerCase() %>"><%= coluna %></h3>
+                <% orders.filter(o => o.status === coluna).forEach(order => { %>
+                    <div class="kanban-card">
+                        <strong>#<%= order.id %> · <%= order.customer_name %></strong>
+                        <div class="meta"><%= order.item_name || '-' %> — R$ <%= Number(order.total || 0).toFixed(2) %></div>
+                        <% if (coluna !== 'Entregue') { %>
+                            <form action="/orders/<%= order.id %>/advance" method="POST">
+                                <button type="submit" class="btn-advance">Avançar →</button>
+                            </form>
+                        <% } %>
+                    </div>
+                <% }) %>
+            </div>
         <% }) %>
-    </table>
+    </div>
 </body>
 </html>

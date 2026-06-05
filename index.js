@@ -121,6 +121,30 @@ app.post('/orders', async (req, res) => {
     }
 });
 
+// ---------- Painel Kanban da Cozinha (Issue #07) ----------
+// Fluxo de produção: Aberto -> Cozinha -> Entrega -> Entregue.
+const FLUXO_STATUS = { 'Aberto': 'Cozinha', 'Cozinha': 'Entrega', 'Entrega': 'Entregue' };
+
+app.post('/orders/:id/advance', async (req, res) => {
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) {
+        return res.status(400).send('<h1>Erro 400 - ID inválido</h1>');
+    }
+    try {
+        const [rows] = await pool.query('SELECT status FROM orders WHERE id = ?', [id]);
+        if (rows.length === 0) {
+            return res.status(404).send('<h1>Erro 404 - Pedido não encontrado</h1>');
+        }
+        const proximo = FLUXO_STATUS[rows[0].status];
+        if (proximo) {
+            await pool.query('UPDATE orders SET status = ? WHERE id = ?', [proximo, id]);
+        }
+        res.redirect('/dashboard');
+    } catch (err) {
+        res.status(500).send('Erro no banco.');
+    }
+});
+
 app.get('/dashboard', async (req, res) => {
     const [items] = await pool.query('SELECT * FROM items');
     const [orders] = await pool.query(

@@ -122,12 +122,14 @@ jobs:
   # TRIVY → SONAR EXTERNAL ISSUES — varredura de CVE na imagem (staging/main)
   # ==========================================================================
   trivy_sonar:
-    name: Trivy - Varredura de CVEs na Imagem (DevSecOps)
+    name: Trivy Scan → Sonar External Issues
     needs: release_docker
     if: github.event_name == 'push' && (github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Login no Docker Hub (para o Trivy puxar a imagem)
         uses: docker/login-action@v3
@@ -151,11 +153,50 @@ jobs:
           echo "Total de CVEs (CRITICAL/HIGH/MEDIUM): ${TOTAL:-0}"
           jq -r '.Results[]?.Vulnerabilities // [] | .[] | "  \(.Severity)\t\(.VulnerabilityID)\t\(.PkgName) \(.InstalledVersion)"' trivy-report.json | sort -u | head -50 || true
 
+      # Converte o JSON do Trivy para o Generic Issue Format do SonarQube.
+      # (Substitui o antigo template @/contrib/sonarqube.tpl, removido do Trivy upstream.)
+      - name: Converter relatório Trivy → formato Sonar (Generic Issues)
+        run: |
+          jq '{
+            rules: ([.Results[]?.Vulnerabilities // [] | .[] | {
+              id: .VulnerabilityID,
+              name: .VulnerabilityID,
+              description: (.Title // .VulnerabilityID),
+              engineId: "Trivy",
+              cleanCodeAttribute: "TRUSTWORTHY",
+              impacts: [{
+                softwareQuality: "SECURITY",
+                severity: (if .Severity == "CRITICAL" or .Severity == "HIGH" then "HIGH" elif .Severity == "MEDIUM" then "MEDIUM" else "LOW" end)
+              }]
+            }] | unique_by(.id)),
+            issues: [.Results[]?.Vulnerabilities // [] | .[] | {
+              ruleId: .VulnerabilityID,
+              primaryLocation: {
+                message: "\(.VulnerabilityID) — \(.PkgName) \(.InstalledVersion): \(.Title // "vulnerabilidade conhecida") [\(.Severity)]",
+                filePath: "Dockerfile",
+                textRange: {startLine: 1}
+              }
+            }]
+          }' trivy-report.json > trivy-sonar.json
+          echo "Issues geradas para o Sonar: $(jq '.issues | length' trivy-sonar.json)"
+
+      - name: SonarQube Scan (External Issues do Trivy)
+        uses: sonarsource/sonarqube-scan-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: "https://devsecops.dcotech.com.br"
+        with:
+          args: >
+            -Dsonar.branch.name=${{ github.ref_name }}
+            -Dsonar.externalIssuesReportPaths=trivy-sonar.json
+
       - name: Upload do relatório Trivy (artefato de auditoria)
         uses: actions/upload-artifact@v4
         with:
           name: trivy-report
-          path: trivy-report.json
+          path: |
+            trivy-report.json
+            trivy-sonar.json
 
   # ==========================================================================
   # DEPLOY na EC2 via SSH/SCP — Entrega/Implantação Contínua (staging/main)

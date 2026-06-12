@@ -5,94 +5,309 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MarmitaTech - Dashboard</title>
     <style>
-        * { box-sizing: border-box; }
-        body { font-family: sans-serif; padding: 20px; }
-        input, select { width: 100%; padding: 8px; }
-        .grid { display: flex; gap: 20px; flex-wrap: wrap; }
-        .card { border: 1px solid #ccc; padding: 15px; border-radius: 8px; width: 300px; max-width: 100%; }
-        .kanban { display: flex; gap: 15px; flex-wrap: wrap; }
-        .kanban-col { flex: 1; min-width: 200px; background: #f4f4f7; border-radius: 8px; padding: 10px; }
-        .col-title { margin: 0 0 10px; padding: 6px; border-radius: 6px; color: #fff; text-align: center; font-size: 15px; }
-        .col-aberto { background: #6c757d; }
-        .col-cozinha { background: #e94560; }
-        .col-entrega { background: #f39c12; }
-        .col-entregue { background: #27ae60; }
-        .kanban-card { background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 10px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
-        .kanban-card .meta { font-size: 13px; color: #555; margin: 5px 0; }
-        .btn-advance { background: #e94560; color: #fff; border: none; padding: 6px 10px; border-radius: 5px; cursor: pointer; width: 100%; }
-        .btn-advance:hover { background: #c81e3c; }
-        .btn-export { display: inline-block; margin: 5px 0 20px; padding: 10px 16px; background: #27ae60; color: #fff; text-decoration: none; border-radius: 6px; font-weight: bold; }
-        .btn-export:hover { background: #1e8449; }
-        /* Toasts (Issue #09) */
-        .toast { position: fixed; top: 20px; right: 20px; left: auto; padding: 14px 20px; border-radius: 8px; color: #fff; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,.2); z-index: 999; animation: slideIn .3s ease; }
-        .toast-ok { background: #27ae60; }
-        .toast-err { background: #e94560; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+            padding: 24px;
+        }
+
+        /* ---------- Header ---------- */
+        .topbar {
+            display: flex; align-items: center; justify-content: space-between;
+            flex-wrap: wrap; gap: 14px; margin-bottom: 24px;
+        }
+        .brand { display: flex; align-items: center; gap: 12px; }
+        .brand img {
+            width: 46px; height: 46px; border-radius: 50%;
+            border: 2px solid #e94560; object-fit: cover;
+        }
+        .brand h1 { font-size: 1.35rem; color: #fff; font-weight: 600; letter-spacing: .3px; }
+        .brand small { display: block; color: #8b93b5; font-size: .78rem; font-weight: 400; }
+        .btn-export {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 11px 18px; border-radius: 10px; cursor: pointer;
+            background: linear-gradient(135deg, #e94560, #c23152);
+            color: #fff; text-decoration: none; font-weight: 600; font-size: .9rem;
+            border: none; transition: opacity .2s, box-shadow .2s;
+            box-shadow: 0 4px 14px rgba(233, 69, 96, .35);
+        }
+        .btn-export:hover { opacity: .92; box-shadow: 0 6px 20px rgba(233, 69, 96, .5); }
+        .btn-export:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+        .btn-export svg { width: 17px; height: 17px; }
+
+        /* ---------- KPIs ---------- */
+        .kpis {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 14px; margin-bottom: 24px;
+        }
+        .kpi {
+            background: rgba(255, 255, 255, .05);
+            border: 1px solid rgba(255, 255, 255, .09);
+            border-radius: 14px; padding: 16px 18px;
+            display: flex; align-items: center; gap: 14px;
+        }
+        .kpi .ico {
+            width: 42px; height: 42px; border-radius: 11px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .kpi .ico svg { width: 21px; height: 21px; }
+        .kpi .num { font-size: 1.45rem; font-weight: 700; color: #fff; line-height: 1.1; }
+        .kpi .lbl { font-size: .76rem; color: #8b93b5; margin-top: 2px; }
+        .ico-open    { background: rgba(139, 147, 181, .18); color: #aeb6d8; }
+        .ico-kitchen { background: rgba(233, 69, 96, .18);  color: #e94560; }
+        .ico-deliv   { background: rgba(243, 156, 18, .18); color: #f5b041; }
+        .ico-money   { background: rgba(39, 174, 96, .18);  color: #2ecc71; }
+
+        /* ---------- Cards / Forms ---------- */
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 16px; margin-bottom: 28px; }
+        .card {
+            background: rgba(255, 255, 255, .05);
+            border: 1px solid rgba(255, 255, 255, .09);
+            border-radius: 14px; padding: 20px;
+        }
+        .card h3 {
+            display: flex; align-items: center; gap: 9px;
+            font-size: 1rem; color: #fff; font-weight: 600; margin-bottom: 16px;
+        }
+        .card h3 svg { width: 18px; height: 18px; color: #e94560; }
+        label { display: block; font-size: .78rem; color: #8b93b5; margin: 10px 0 5px; }
+        input, select {
+            width: 100%; padding: 11px 13px; border-radius: 9px;
+            border: 1px solid rgba(255, 255, 255, .14);
+            background: rgba(0, 0, 0, .25); color: #fff; font-size: .92rem;
+            transition: border-color .2s;
+        }
+        input::placeholder { color: #5d6585; }
+        input:focus, select:focus { outline: none; border-color: #e94560; }
+        select option { background: #1a1a2e; color: #fff; }
+        .btn {
+            width: 100%; margin-top: 16px; padding: 12px; border: none; border-radius: 9px;
+            background: linear-gradient(135deg, #e94560, #c23152); color: #fff;
+            font-weight: 600; font-size: .92rem; cursor: pointer;
+            transition: opacity .2s; min-height: 44px;
+        }
+        .btn:hover { opacity: .92; }
+        .btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+        .menu-list { list-style: none; max-height: 250px; overflow-y: auto; }
+        .menu-list li {
+            display: flex; justify-content: space-between; align-items: center; gap: 8px;
+            padding: 9px 4px; border-bottom: 1px solid rgba(255, 255, 255, .07); font-size: .88rem;
+        }
+        .menu-list li:last-child { border-bottom: none; }
+        .menu-list .cat {
+            font-size: .68rem; padding: 3px 9px; border-radius: 99px;
+            background: rgba(233, 69, 96, .16); color: #f08a9b; white-space: nowrap;
+        }
+        .menu-list .price { color: #2ecc71; font-weight: 600; white-space: nowrap; }
+
+        /* ---------- Kanban ---------- */
+        h2.section {
+            display: flex; align-items: center; gap: 10px;
+            font-size: 1.1rem; color: #fff; margin-bottom: 14px; font-weight: 600;
+        }
+        h2.section svg { width: 20px; height: 20px; color: #e94560; }
+        .kanban { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+        .kanban-col {
+            background: rgba(0, 0, 0, .22);
+            border: 1px solid rgba(255, 255, 255, .07);
+            border-radius: 14px; padding: 12px; min-height: 120px;
+        }
+        .col-title {
+            display: flex; align-items: center; justify-content: space-between;
+            font-size: .85rem; font-weight: 700; color: #fff;
+            padding: 9px 12px; border-radius: 9px; margin-bottom: 12px;
+        }
+        .col-title .count {
+            background: rgba(0, 0, 0, .25); border-radius: 99px;
+            min-width: 24px; height: 24px; display: inline-flex;
+            align-items: center; justify-content: center; font-size: .75rem;
+        }
+        .col-aberto   { background: linear-gradient(135deg, #5d6585, #474e6b); }
+        .col-cozinha  { background: linear-gradient(135deg, #e94560, #c23152); }
+        .col-entrega  { background: linear-gradient(135deg, #f39c12, #d68910); }
+        .col-entregue { background: linear-gradient(135deg, #27ae60, #1e8449); }
+        .kanban-card {
+            background: rgba(255, 255, 255, .07);
+            border: 1px solid rgba(255, 255, 255, .1);
+            border-radius: 11px; padding: 12px; margin-bottom: 10px;
+            transition: border-color .2s, background .2s;
+        }
+        .kanban-card:hover { border-color: rgba(233, 69, 96, .5); background: rgba(255, 255, 255, .1); }
+        .kanban-card .who { font-size: .88rem; font-weight: 600; color: #fff; }
+        .kanban-card .what { font-size: .78rem; color: #aeb6d8; margin: 4px 0 2px; }
+        .kanban-card .val { font-size: .82rem; color: #2ecc71; font-weight: 600; }
+        .btn-advance {
+            display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+            width: 100%; margin-top: 10px; padding: 9px; min-height: 38px;
+            background: transparent; border: 1px solid #e94560; border-radius: 8px;
+            color: #e94560; font-weight: 600; font-size: .8rem; cursor: pointer;
+            transition: background .2s, color .2s;
+        }
+        .btn-advance:hover { background: #e94560; color: #fff; }
+        .btn-advance:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+        .btn-advance svg { width: 14px; height: 14px; }
+        .empty-col { text-align: center; color: #5d6585; font-size: .78rem; padding: 18px 6px; }
+
+        /* ---------- Toast ---------- */
+        .toast {
+            position: fixed; top: 20px; right: 20px; z-index: 50;
+            display: flex; align-items: center; gap: 10px;
+            padding: 14px 20px; border-radius: 11px; color: #fff;
+            font-weight: 600; font-size: .9rem;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, .35);
+            animation: slideIn .3s ease;
+        }
+        .toast svg { width: 18px; height: 18px; flex-shrink: 0; }
+        .toast-ok  { background: linear-gradient(135deg, #27ae60, #1e8449); }
+        .toast-err { background: linear-gradient(135deg, #e94560, #c23152); }
         @keyframes slideIn { from { transform: translateX(120%); } to { transform: translateX(0); } }
-        /* Responsividade Mobile - operável em 375px (Issue #09) */
+        @media (prefers-reduced-motion: reduce) {
+            .toast { animation: none; }
+            * { transition: none !important; }
+        }
+
+        /* ---------- Mobile (375px+) ---------- */
+        @media (max-width: 900px) { .kanban { grid-template-columns: repeat(2, 1fr); } }
         @media (max-width: 600px) {
-            body { padding: 12px; }
-            h1 { font-size: 1.4rem; }
-            .card { width: 100%; }
-            .kanban { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-            .kanban-col { min-width: 75vw; }
-            .toast { left: 12px; right: 12px; text-align: center; }
+            body { padding: 14px; }
+            .brand h1 { font-size: 1.1rem; }
+            .btn-export { width: 100%; justify-content: center; }
+            .kanban { display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 8px; }
+            .kanban-col { min-width: 78vw; flex-shrink: 0; }
+            .toast { left: 14px; right: 14px; justify-content: center; }
         }
     </style>
 </head>
 <body>
-    <% if (toastOk) { %><div class="toast toast-ok" id="toast"><%= toastOk %></div><% } %>
-    <% if (toastErr) { %><div class="toast toast-err" id="toast"><%= toastErr %></div><% } %>
-    <h1>Painel Administrativo - MarmitaTech</h1>
-    <a href="/admin/export" class="btn-export">⬇️ Baixar Relatório (CSV)</a>
+    <%
+        const abertos   = orders.filter(o => o.status === 'Aberto').length;
+        const cozinha   = orders.filter(o => o.status === 'Cozinha').length;
+        const entrega   = orders.filter(o => o.status === 'Entrega').length;
+        const entregues = orders.filter(o => o.status === 'Entregue').length;
+        const receita   = orders.reduce((s, o) => s + Number(o.total || 0), 0);
+    %>
+
+    <% if (toastOk) { %>
+        <div class="toast toast-ok" id="toast" role="status">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+            <%= toastOk %>
+        </div>
+    <% } %>
+    <% if (toastErr) { %>
+        <div class="toast toast-err" id="toast" role="alert">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+            <%= toastErr %>
+        </div>
+    <% } %>
+
+    <header class="topbar">
+        <div class="brand">
+            <img src="/images/logo.jpeg" alt="Logo Restaurante Planalto">
+            <h1>Restaurante Planalto
+                <small>MarmitaTech Pro &middot; Painel Administrativo</small>
+            </h1>
+        </div>
+        <a href="/admin/export" class="btn-export">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
+            Baixar Relatório (CSV)
+        </a>
+    </header>
+
+    <section class="kpis" aria-label="Indicadores">
+        <div class="kpi">
+            <div class="ico ico-open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+            <div><div class="num"><%= abertos %></div><div class="lbl">Pedidos Abertos</div></div>
+        </div>
+        <div class="kpi">
+            <div class="ico ico-kitchen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 0 0-10 10c0 1.5.4 3 1 4.2.2.4.2.8 0 1.2l-.8 2.4a1 1 0 0 0 1.3 1.3l2.4-.8c.4-.2.8-.2 1.2 0A10 10 0 1 0 12 2Z"/><path d="M8 12h8"/></svg></div>
+            <div><div class="num"><%= cozinha %></div><div class="lbl">Na Cozinha</div></div>
+        </div>
+        <div class="kpi">
+            <div class="ico ico-deliv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 18H3c-.6 0-1-.4-1-1V7c0-.6.4-1 1-1h10c.6 0 1 .4 1 1v11"/><path d="M14 9h4l4 4v4c0 .6-.4 1-1 1h-2"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg></div>
+            <div><div class="num"><%= entrega + entregues %></div><div class="lbl">Em Rota / Entregues</div></div>
+        </div>
+        <div class="kpi">
+            <div class="ico ico-money"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+            <div><div class="num">R$ <%= receita.toFixed(2) %></div><div class="lbl">Receita Total</div></div>
+        </div>
+    </section>
+
     <div class="grid">
         <div class="card">
-            <h3>Nova Marmita</h3>
+            <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Nova Marmita</h3>
             <form action="/add-item" method="POST">
-                <input type="text" name="name" placeholder="Nome (Ex: Marmita Fitness)" required><br><br>
-                <input type="text" name="category" placeholder="Categoria (Ex: Fitness)"><br><br>
-                <input type="number" name="price" step="0.01" min="0.01" placeholder="Preço (Ex: 22.90)" required><br><br>
-                <button type="submit">Cadastrar Marmita</button>
+                <label for="f-name">Nome</label>
+                <input id="f-name" type="text" name="name" placeholder="Ex: Marmita Fitness Frango" required>
+                <label for="f-cat">Categoria</label>
+                <input id="f-cat" type="text" name="category" placeholder="Ex: Fitness">
+                <label for="f-price">Preço (R$)</label>
+                <input id="f-price" type="number" name="price" step="0.01" min="0.01" placeholder="22.90" required>
+                <button type="submit" class="btn">Cadastrar Marmita</button>
             </form>
         </div>
 
         <div class="card">
-            <h3>Marmitas Cadastradas</h3>
-            <ul>
+            <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11h18l-1.5 9.5a2 2 0 0 1-2 1.5h-11a2 2 0 0 1-2-1.5Z"/><path d="M12 3a4 4 0 0 1 4 4v4H8V7a4 4 0 0 1 4-4Z"/></svg>Cardápio (<%= items.length %>)</h3>
+            <ul class="menu-list">
                 <% items.forEach(item => { %>
-                    <li><%= item.name %> (<%= item.category %>) — R$ <%= Number(item.price).toFixed(2) %></li>
+                    <li>
+                        <span><%= item.name %></span>
+                        <span style="display:flex;align-items:center;gap:8px;">
+                            <% if (item.category) { %><span class="cat"><%= item.category %></span><% } %>
+                            <span class="price">R$ <%= Number(item.price).toFixed(2) %></span>
+                        </span>
+                    </li>
                 <% }) %>
             </ul>
         </div>
 
         <div class="card">
-            <h3>Novo Pedido</h3>
+            <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>Novo Pedido</h3>
             <form action="/orders" method="POST">
-                <input type="text" name="customer_name" placeholder="Nome do cliente" required><br><br>
-                <select name="item_id" required>
+                <label for="f-cust">Cliente</label>
+                <input id="f-cust" type="text" name="customer_name" placeholder="Nome do cliente" required>
+                <label for="f-item">Marmita</label>
+                <select id="f-item" name="item_id" required>
                     <option value="" disabled selected>Selecione a marmita</option>
                     <% items.forEach(item => { %>
                         <option value="<%= item.id %>"><%= item.name %> — R$ <%= Number(item.price).toFixed(2) %></option>
                     <% }) %>
-                </select><br><br>
-                <button type="submit">Registrar Pedido</button>
+                </select>
+                <button type="submit" class="btn">Registrar Pedido</button>
             </form>
         </div>
     </div>
 
-    <hr>
-    <h2>🍱 Kanban da Cozinha</h2>
+    <h2 class="section">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+        Kanban da Cozinha
+    </h2>
     <% const COLUNAS = ['Aberto', 'Cozinha', 'Entrega', 'Entregue']; %>
     <div class="kanban">
-        <% COLUNAS.forEach(coluna => { %>
+        <% COLUNAS.forEach(coluna => { const cards = orders.filter(o => o.status === coluna); %>
             <div class="kanban-col">
-                <h3 class="col-title col-<%= coluna.toLowerCase() %>"><%= coluna %></h3>
-                <% orders.filter(o => o.status === coluna).forEach(order => { %>
+                <div class="col-title col-<%= coluna.toLowerCase() %>">
+                    <%= coluna %>
+                    <span class="count"><%= cards.length %></span>
+                </div>
+                <% if (cards.length === 0) { %>
+                    <div class="empty-col">Sem pedidos</div>
+                <% } %>
+                <% cards.forEach(order => { %>
                     <div class="kanban-card">
-                        <strong>#<%= order.id %> · <%= order.customer_name %></strong>
-                        <div class="meta"><%= order.item_name || '-' %> — R$ <%= Number(order.total || 0).toFixed(2) %></div>
+                        <div class="who">#<%= order.id %> &middot; <%= order.customer_name %></div>
+                        <div class="what"><%= order.item_name || '-' %></div>
+                        <div class="val">R$ <%= Number(order.total || 0).toFixed(2) %></div>
                         <% if (coluna !== 'Entregue') { %>
                             <form action="/orders/<%= order.id %>/advance" method="POST">
-                                <button type="submit" class="btn-advance">Avançar →</button>
+                                <button type="submit" class="btn-advance">
+                                    Avançar
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                                </button>
                             </form>
                         <% } %>
                     </div>
@@ -102,7 +317,6 @@
     </div>
 
     <script>
-        // Auto-dismiss do toast após 3s + limpa a query string da URL
         const toast = document.getElementById('toast');
         if (toast) {
             setTimeout(() => { toast.style.transition = 'opacity .4s'; toast.style.opacity = '0'; }, 3000);

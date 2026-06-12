@@ -70,7 +70,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Validar que a imagem Docker constrói
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: .
           push: false
@@ -108,7 +108,7 @@ jobs:
           echo "image_latest=$IMAGE:latest" >> "$GITHUB_OUTPUT"
 
       - name: Build & Push
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: .
           push: true
